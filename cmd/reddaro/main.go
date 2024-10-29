@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 )
 
 type post struct {
-	ID    string
-	Title string
+	ID    string `json:"id"`
+	Title string `json:"title"`
 }
 
 var posts = []post{
@@ -20,13 +19,14 @@ var posts = []post{
 	{ID: "3", Title: "How is waldo?"},
 }
 
-type api struct{}
-
 func getRootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("got / request\n")
-	io.WriteString(w, "Hello, World!\n")
+
+	fmt.Fprintf(w, "Hello, you requested: %s\n", r.URL.Path)
+	w.WriteHeader(http.StatusOK)
 }
 
+// Rest HTTP GET request to get back all post in the database
 func getPostsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("got /posts request\n")
 	w.Header().Set("Content-Type", "application/json")
@@ -39,9 +39,20 @@ func getPostsHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func getClickedHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("got /clicked request\n")
+	fmt.Fprintf(w, "I was clicked!")
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func main() {
-	http.HandleFunc("/", getRootHandler)
-	http.HandleFunc("/posts", getPostsHandler)
+	http.HandleFunc("/api", getRootHandler)
+	http.HandleFunc("/api/posts", getPostsHandler)
+	http.HandleFunc("/api/clicked", getClickedHandler)
+
+	fs := http.FileServer(http.Dir("web/"))
+	http.Handle("/", fs)
 
 	err := http.ListenAndServe(":3333", nil)
 
